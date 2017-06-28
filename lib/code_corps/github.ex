@@ -103,7 +103,6 @@ defmodule CodeCorps.GitHub do
     Application.get_env(:code_corps, :github_base_url) || "https://api.github.com/"
   end
 
-  #
   @spec get_token_url() :: String.t
   defp get_token_url() do
     Application.get_env(:code_corps, :github_oauth_url) || "https://github.com/login/oauth/access_token"
@@ -132,7 +131,7 @@ defmodule CodeCorps.GitHub do
   Used to exchange the JWT for an access token for a given integration, or
   for the GitHub App itself.
 
-  Expires in 10 minutes.
+  Expires in 5 minutes.
   """
   def generate_jwt do
     signer = rsa_key() |> Joken.rs256()
