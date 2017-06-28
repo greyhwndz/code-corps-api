@@ -15,12 +15,12 @@ defmodule CodeCorps.GitHub.Webhook.HandlerTest do
     test "handles issues event" do
       payload = load_fixture("issues_opened")
 
-      assert Handler.handle("issues", "bar", payload) == :not_fully_implemented
+      assert Handler.handle("issues", "abc-123", payload) == :not_fully_implemented
 
       event = Repo.one(GithubEvent)
 
       assert event.action == "opened"
-      assert event.github_delivery_id == "bar"
+      assert event.github_delivery_id == "abc-123"
       assert event.status == "unprocessed"
       assert event.source == "not implemented"
       assert event.type == "issues"
@@ -29,12 +29,12 @@ defmodule CodeCorps.GitHub.Webhook.HandlerTest do
     test "handles issue_comment event" do
       payload = load_fixture("issue_comment_created")
 
-      assert Handler.handle("issue_comment", "bar", payload) == :not_fully_implemented
+      assert Handler.handle("issue_comment", "abc-123", payload) == :not_fully_implemented
 
       event = Repo.one(GithubEvent)
 
       assert event.action == "created"
-      assert event.github_delivery_id == "bar"
+      assert event.github_delivery_id == "abc-123"
       assert event.status == "unprocessed"
       assert event.source == "not implemented"
       assert event.type == "issue_comment"
@@ -43,12 +43,12 @@ defmodule CodeCorps.GitHub.Webhook.HandlerTest do
     test "handles installation_repositories event" do
       payload = load_fixture("installation_repositories_removed")
 
-      assert Handler.handle("installation_repositories", "bar", payload) == :not_fully_implemented
+      assert Handler.handle("installation_repositories", "abc-123", payload) == :not_fully_implemented
 
       event = Repo.one(GithubEvent)
 
       assert event.action == "removed"
-      assert event.github_delivery_id == "bar"
+      assert event.github_delivery_id == "abc-123"
       assert event.status == "unprocessed"
       assert event.source == "not implemented"
       assert event.type == "installation_repositories"
@@ -57,12 +57,12 @@ defmodule CodeCorps.GitHub.Webhook.HandlerTest do
     test "handles installation event" do
       payload = load_fixture("installation_created")
 
-      assert Handler.handle("installation", "bar", payload) == :not_fully_implemented
+      assert Handler.handle("installation", "abc-123", payload) == :not_fully_implemented
 
       event = Repo.one(GithubEvent)
 
       assert event.action == "created"
-      assert event.github_delivery_id == "bar"
+      assert event.github_delivery_id == "abc-123"
       assert event.status == "unprocessed"
       assert event.source == "not implemented"
       assert event.type == "installation"

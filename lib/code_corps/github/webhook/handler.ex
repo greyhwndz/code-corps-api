@@ -48,7 +48,10 @@ defmodule CodeCorps.GitHub.Webhook.Handler do
   defp get_source(_), do: "not implemented"
 
   def process_payload(%GithubEvent{type: "installation"} = event, payload), do: Installation.handle(event, payload)
+
   def process_payload(%GithubEvent{type: "installation_repositories"} = event, payload), do: InstallationRepositories.handle(event, payload)
+
   def process_payload(%GithubEvent{type: "issue_comment"} = event, payload), do: IssueComment.handle(event, payload)
+
   def process_payload(%GithubEvent{type: "issues"} = event, payload), do: Issues.handle(event, payload)
 end

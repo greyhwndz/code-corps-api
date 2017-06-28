@@ -3,6 +3,7 @@ defmodule CodeCorps.GitHub.Events.InstallationTest do
 
   use CodeCorps.DbAccessCase
 
+  import CodeCorps.Factories
   import CodeCorps.TestHelpers.GitHub
 
   alias CodeCorps.{
@@ -13,7 +14,9 @@ defmodule CodeCorps.GitHub.Events.InstallationTest do
   describe "handle/2" do
     test "is not implemented" do
       payload = load_fixture("installation_created")
-      assert Installation.handle(%GithubEvent{}, payload) == :not_fully_implemented
+      %{"sender" => %{"id" => user_id}} = payload
+      insert(:user, github_id: user_id)
+      assert Installation.handle(%GithubEvent{action: "created"}, payload) == :not_fully_implemented
     end
   end
 end
