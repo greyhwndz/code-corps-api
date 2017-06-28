@@ -9,6 +9,8 @@ defmodule CodeCorps.GithubAppInstallation do
     belongs_to :project, CodeCorps.Project # The originating project
     belongs_to :user, CodeCorps.User
 
+    has_many :github_repos, CodeCorps.GithubRepo
+
     timestamps()
   end
 

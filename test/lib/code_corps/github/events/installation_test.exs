@@ -2,6 +2,7 @@ defmodule CodeCorps.GitHub.Events.InstallationTest do
   @moduledoc false
 
   use CodeCorps.DbAccessCase
+  use CodeCorps.GitHubCase
 
   import CodeCorps.Factories
   import CodeCorps.TestHelpers.GitHub
@@ -9,13 +10,19 @@ defmodule CodeCorps.GitHub.Events.InstallationTest do
   alias CodeCorps.{
     GithubAppInstallation,
     GithubEvent,
+    GithubRepo,
     GitHub.Events.Installation,
     Repo
   }
 
+  alias CodeCorps.GitHub.Adapters.GithubRepo, as: GithubRepoAdapter
+
+  @installation_created load_fixture("installation_created")
+  @user_repositories load_fixture("user_repositories")
+
   describe "handle/2" do
     test "creates installation for unmatched user if no user" do
-      payload = load_fixture("installation_created")
+      payload = @installation_created
       event = insert(:github_event, action: "created", type: "installation")
 
       assert Installation.handle(event, payload)
@@ -30,7 +37,7 @@ defmodule CodeCorps.GitHub.Events.InstallationTest do
     end
 
     test "creates installation initiated_on_github if user matched but installation unmatched" do
-      %{"sender" => %{"id" => user_github_id}} = payload = load_fixture("installation_created")
+      %{"sender" => %{"id" => user_github_id}} = payload = @installation_created
       event = insert(:github_event, action: "created", type: "installation")
 
       user = insert(:user, github_id: user_github_id)
@@ -46,8 +53,9 @@ defmodule CodeCorps.GitHub.Events.InstallationTest do
       assert updated_event.status == "processed"
     end
 
+    @tag bypass: %{"/user/installations/#{@installation_created |> get_in(["installation", "id"])}/repositories" => {200, @user_repositories}}
     test "updates installation, creates repos, if both user and installation matched" do
-      %{"sender" => %{"id" => user_github_id}, "installation" => %{"id" => installation_github_id}} = payload = load_fixture("installation_created")
+      %{"sender" => %{"id" => user_github_id}, "installation" => %{"id" => installation_github_id}} = payload = @installation_created
       event = insert(:github_event, action: "created", type: "installation")
 
       user = insert(:user, github_id: user_github_id)
@@ -65,8 +73,10 @@ defmodule CodeCorps.GitHub.Events.InstallationTest do
       updated_event = Repo.one(GithubEvent)
       assert updated_event.status == "processed"
 
-      # TODO: Get repos from github, insert into DB
-      assert false
+      [repo_fixture] = @user_repositories |> Map.get("repositories")
+
+      repo = Repo.get_by(GithubRepo, GithubRepoAdapter.from_api(repo_fixture))
+      assert repo.github_app_installation_id == updated_github_app_installation.id
     end
   end
 end

@@ -4,11 +4,15 @@ defmodule CodeCorps.GitHub.Events.Installation do
   """
 
   alias CodeCorps.{
+    GitHub,
     GithubAppInstallation,
     GithubEvent,
+    GithubRepo,
     Repo,
     User
   }
+
+  alias CodeCorps.GitHub.Adapters.GithubRepo, as: GithubRepoAdapter
 
   alias Ecto.Changeset
 
@@ -20,6 +24,7 @@ defmodule CodeCorps.GitHub.Events.Installation do
   - do the work
   - marked the passed in event as "processed" or "errored"
   """
+  @spec handle(GithubEvent.t, map) :: {:ok, GithubEvent.t}
   def handle(%GithubEvent{action: "created"} = event, payload) do
     event
     |> start_event_processing()
@@ -37,12 +42,12 @@ defmodule CodeCorps.GitHub.Events.Installation do
       {%User{} = user, nil} -> create_installation_initiated_on_github(user, installation_attrs)
       {%User{} = user, %GithubAppInstallation{} = github_app_installation} -> update_installation(user, github_app_installation)
     end
+
   end
 
   defp stop_event_processing({:ok, %GithubAppInstallation{}}, %GithubEvent{} = event) do
     event |> Changeset.change(%{status: "processed"}) |> Repo.update
   end
-
   defp stop_event_processing(_, %GithubEvent{} = event) do
     event |> Changeset.change(%{status: "errored"}) |> Repo.update
   end
@@ -65,9 +70,11 @@ defmodule CodeCorps.GitHub.Events.Installation do
   end
 
   defp update_installation(%User{} = user, %GithubAppInstallation{} = github_app_installation) do
+    # TODO: user and installation need to relate. What if they don't?
+
     github_app_installation
     |> start_app_processing()
-    |> process_repos()
+    |> process_repos(user)
     |> stop_app_processing()
   end
 
@@ -77,9 +84,24 @@ defmodule CodeCorps.GitHub.Events.Installation do
     |> Repo.update()
   end
 
-  defp process_repos({:ok, %GithubAppInstallation{} = github_app_installation}) do
-    # TODO: Implement this part
-    {:ok, github_app_installation}
+  defp process_repos({:ok, %GithubAppInstallation{} = github_app_installation}, %User{} = user) do
+    # TODO: Consider moving into transaction
+    {:ok, repositories} =
+      user
+      |> GitHub.Installation.repositories(github_app_installation)
+      |> (fn {:ok, repositories} -> repositories end).()
+      |> Enum.map(&create_repository(github_app_installation, &1))
+      |> Enum.map(fn {:ok, repository} -> repository end)
+      |> (fn repositories -> {:ok, repositories} end).()
+
+    {:ok, github_app_installation |> Map.put(:github_repos, repositories)}
+  end
+
+  defp create_repository(%GithubAppInstallation{} = github_app_installation, repo_attributes) do
+    %GithubRepo{}
+    |> Changeset.change(repo_attributes |> GithubRepoAdapter.from_api)
+    |> Changeset.put_assoc(:github_app_installation, github_app_installation)
+    |> Repo.insert()
   end
 
   defp stop_app_processing({:ok, %GithubAppInstallation{} = github_app_installation}) do
